@@ -1,0 +1,21 @@
+{
+  "id": "median-party-roll",
+  "title": "Median Party Roll",
+  "description": "Lets a GM choose players, request a roll from each of them, and announce the median result.",
+  "version": "1.0.0",
+  "authors": [
+    {
+      "name": "David"
+    }
+  ],
+  "compatibility": {
+    "minimum": "12",
+    "verified": "13"
+  },
+  "esmodules": [
+    "scripts/median-party-roll.js"
+  ],
+  "styles": [
+    "styles/median-party-roll.css"
+  ]
+}
