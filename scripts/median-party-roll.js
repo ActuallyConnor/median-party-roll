@@ -89,10 +89,10 @@ function openGmDialog() {
     `)
     .join("");
 
-  new Dialog({
-    title: "Request Median Roll",
+  foundry.applications.api.DialogV2.wait({
+    window: { title: "Request Median Roll" },
     content: `
-      <form class="median-party-roll-form">
+      <div class="median-party-roll-form">
         <div class="form-group">
           <label>Roll formula</label>
           <input type="text" name="formula" value="${escapeHtml(defaultFormula)}" placeholder="1d20">
@@ -105,26 +105,29 @@ function openGmDialog() {
           <legend>Players</legend>
           <div class="median-party-roll-players">${checkboxes}</div>
         </fieldset>
-      </form>
+      </div>
     `,
-    buttons: {
-      request: {
-        icon: '<i class="fas fa-paper-plane"></i>',
+    buttons: [
+      {
+        action: "request",
+        icon: "fas fa-paper-plane",
         label: "Request Rolls",
-        callback: html => requestRolls(html)
+        default: true,
+        callback: (_event, button) => requestRolls(button.form)
       },
-      cancel: {
+      {
+        action: "cancel",
+        icon: "fas fa-times",
         label: "Cancel"
       }
-    },
-    default: "request"
-  }).render(true);
+    ],
+    rejectClose: false
+  });
 }
 
-async function requestRolls(html) {
-  const form = html[0].querySelector("form");
-  const formula = form.formula.value.trim() || "1d20";
-  const prompt = form.prompt.value.trim() || "Roll for the median result";
+async function requestRolls(form) {
+  const formula = form.elements.formula.value.trim() || "1d20";
+  const prompt = form.elements.prompt.value.trim() || "Roll for the median result";
   const userIds = Array.from(form.querySelectorAll('input[name="players"]:checked')).map(input => input.value);
 
   if (!userIds.length) {
@@ -179,25 +182,23 @@ async function handleSocketMessage(message) {
 function showPlayerRollDialog(request) {
   if (state.pendingDialog?.rendered) state.pendingDialog.close();
 
-  state.pendingDialog = new Dialog({
-    title: "Median Roll Requested",
+  state.pendingDialog = new foundry.applications.api.DialogV2({
+    window: { title: "Median Roll Requested" },
     content: `
       <div class="median-party-roll-request">
         <p>${escapeHtml(request.prompt)}</p>
         <p><strong>Formula:</strong> <code>${escapeHtml(request.formula)}</code></p>
       </div>
     `,
-    buttons: {
-      roll: {
-        icon: '<i class="fas fa-dice-d20"></i>',
+    buttons: [
+      {
+        action: "roll",
+        icon: "fas fa-dice-d20",
         label: "Roll",
+        default: true,
         callback: () => submitPlayerRoll(request)
       }
-    },
-    close: () => {
-      state.pendingDialog = null;
-    },
-    default: "roll"
+    ]
   });
 
   state.pendingDialog.render(true);
@@ -205,7 +206,7 @@ function showPlayerRollDialog(request) {
 
 async function submitPlayerRoll(request) {
   try {
-    const roll = await new Roll(request.formula).evaluate({ async: true });
+    const roll = await new Roll(request.formula).evaluate();
     await roll.toMessage({
       speaker: ChatMessage.getSpeaker({ user: game.user }),
       flavor: `${request.prompt} - ${game.user.name}`
